@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Monitoring IoT - Revann</title>
+    <style>
+        /* CSS untuk mempercantik tampilan */
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        h2 { color: #1a73e8; }
+        .container { max-width: 900px; margin: auto; }
+        .cards { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 180px; }
+        .card h3 { margin: 0; color: #5f6368; font-size: 16px; }
+        .card p { font-size: 24px; font-weight: bold; margin: 10px 0; color: #202124; }
+        
+        #statusBox { font-size: 18px; font-weight: bold; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; min-width: 200px; }
+        .aman { background-color: #ceead6; color: #0d652d; }
+        .waspada { background-color: #feefc3; color: #b05a00; }
+        .bahaya { background-color: #f9dbe0; color: #a50e0e; }
+
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; border-bottom: 1px solid #eee; text-align: center; }
+        th { background-color: #1a73e8; color: white; }
+        tr:hover { background-color: #f8f9fa; }
+        
+        button { background-color: #1a73e8; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; margin-bottom: 20px; }
+        button:hover { background-color: #1557b0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>📡 Sistem Monitoring Real-Time</h2>
+    
+    <button onclick="mulaiMonitoring()">Mulai Monitoring</button>
+    <br>
+    
+    <div id="statusBox" class="aman">STATUS: MENUNGGU DATA...</div>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Suhu</h3>
+            <p id="txtSuhu">-- °C</p>
+        </div>
+        <div class="card">
+            <h3>Kelembapan</h3>
+            <p id="txtKelembapan">-- %</p>
+        </div>
+        <div class="card">
+            <h3>Cahaya (LDR)</h3>
+            <p id="txtLDR">--</p>
+        </div>
+    </div>
+
+    <h3>Riwayat Data (Logs)</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Waktu</th>
+                <th>Suhu</th>
+                <th>Kelembapan</th>
+                <th>LDR</th>
+                <th>Kondisi</th>
+            </tr>
+        </thead>
+        <tbody id="tabelBody">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // URL Apps Script kamu
+    const scriptURL = "https://script.google.com/macros/s/AKfycbyz_PseDSihcoh3w8R885RRvorLvc5R0ikQBh1vS7kMLkL5oMXDoxiuCL7eIRkSMjMsaA/exec";
+
+    function ambilData() {
+        fetch(scriptURL)
+        .then(response => response.json())
+        .then(data => {
+            if (data.length <= 1) return; // Jika hanya ada header
+
+            let tbody = document.getElementById("tabelBody");
+            tbody.innerHTML = "";
+
+            // Ambil data terbaru (baris terakhir di spreadsheet)
+            let dataTerakhir = data[data.length - 1];
+            
+            // Update Card & Status
+            document.getElementById("txtSuhu").innerText = dataTerakhir[1] + " °C";
+            document.getElementById("txtKelembapan").innerText = dataTerakhir[2] + " %";
+            document.getElementById("txtLDR").innerText = dataTerakhir[3];
+            
+            let status = dataTerakhir[4];
+            let sBox = document.getElementById("statusBox");
+            sBox.innerText = "KONDISI: " + status;
+            
+            // Ganti warna status box
+            sBox.className = ""; // reset class
+            if(status === "AMAN") sBox.classList.add("aman");
+            else if(status === "WASPADA") sBox.classList.add("waspada");
+            else if(status === "BAHAYA") sBox.classList.add("bahaya");
+
+            // Masukkan ke tabel (urutan terbaru di atas)
+            for (let i = data.length - 1; i >= 1; i--) {
+                let baris = data[i];
+                let htmlBaris = `<tr>
+                    <td>${new Date(baris[0]).toLocaleTimeString()}</td>
+                    <td>${baris[1]} °C</td>
+                    <td>${baris[2]} %</td>
+                    <td>${baris[3]}</td>
+                    <td>${baris[4]}</td>
+                </tr>`;
+                tbody.innerHTML += htmlBaris;
+            }
+        })
+        .catch(error => console.error('Error saat ambil data:', error));
+    }
+
+    function mulaiMonitoring() {
+        ambilData();
+        // Update data setiap 5 detik secara otomatis
+        setInterval(ambilData, 5000);
+        alert("Monitoring Berhasil Dijalankan!");
+    }
+</script>
+
+</body>
+</html>
