@@ -6,25 +6,32 @@
     <title>Advanced IoT Dashboard - Revann</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: auto; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background-color: #f0f2f5; margin: 0; padding: 20px; }
+        .container { max-width: 1100px; margin: auto; }
         .cards { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin: 20px 0; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 150px; }
-        .chart-container { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 180px; }
+        .card h3 { margin: 0 0 10px 0; font-size: 16px; color: #555; }
+        .card p { margin: 0; font-size: 24px; font-weight: bold; }
         
-        #statusBox { font-size: 18px; font-weight: bold; padding: 12px; border-radius: 8px; display: inline-block; margin: 10px 0; min-width: 200px; }
-        .aman { background-color: #ceead6; color: #0d652d; }
-        .waspada { background-color: #feefc3; color: #b05a00; }
-        .bahaya { background-color: #f9dbe0; color: #a50e0e; }
+        /* Layout Grafik 2 Kolom */
+        .charts-row { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 30px; }
+        .chart-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex: 1; min-width: 300px; }
+        .chart-box h4 { margin-top: 0; color: #333; }
+
+        #statusBox { font-size: 18px; font-weight: bold; padding: 12px; border-radius: 8px; display: inline-block; margin: 10px 0; min-width: 250px; transition: 0.3s; }
+        .aman { background-color: #ceead6; color: #0d652d; border: 1px solid #0d652d; }
+        .waspada { background-color: #feefc3; color: #b05a00; border: 1px solid #b05a00; }
+        .bahaya { background-color: #f9dbe0; color: #a50e0e; border: 1px solid #a50e0e; }
+        .standby { background-color: #e8eaed; color: #3c4043; border: 1px solid #3c4043; }
 
         .controls { background: #fff; padding: 15px; border-radius: 10px; display: inline-block; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-size: 14px; margin: 0 10px; }
-        button { border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; color: white; }
+        select, button { padding: 10px; border-radius: 6px; font-size: 14px; margin: 5px; }
+        button { border: none; cursor: pointer; font-weight: bold; color: white; min-width: 100px; }
         .btn-start { background-color: #1a73e8; }
         .btn-stop { background-color: #d93025; }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
 
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; margin-top: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; }
         th { background-color: #1a73e8; color: white; }
     </style>
@@ -35,31 +42,37 @@
     <h2>📊 Dashboard Real-Time IoT Revann</h2>
     
     <div class="controls">
-        <label><b>Interval Update:</b></label>
+        <label><b>Interval:</b></label>
         <select id="selectInterval">
             <option value="1000">1 Detik</option>
             <option value="5000" selected>5 Detik</option>
             <option value="10000">10 Detik</option>
-            <option value="30000">30 Detik</option>
         </select>
         <button id="btnStart" class="btn-start" onclick="mulaiMonitoring()">START</button>
         <button id="btnStop" class="btn-stop" onclick="stopMonitoring()" disabled>STOP</button>
     </div>
 
     <br>
-    <div id="statusBox" class="aman">STATUS: STANDBY</div>
+    <div id="statusBox" class="standby">STATUS: STANDBY</div>
 
     <div class="cards">
-        <div class="card"><h3>Suhu</h3><p id="txtSuhu">-- °C</p></div>
+        <div class="card"><h3>Suhu</h3><p id="txtSuhu" style="color: #1a73e8;">-- °C</p></div>
         <div class="card"><h3>Kelembapan</h3><p id="txtHumi" style="color: #00bcd4;">-- %</p></div>
         <div class="card"><h3>LDR</h3><p id="txtLDR" style="color: #f4b400;">--</p></div>
     </div>
 
-    <div class="chart-container">
-        <canvas id="iotChart"></canvas>
+    <div class="charts-row">
+        <div class="chart-box">
+            <h4>Suhu & Kelembapan</h4>
+            <canvas id="chartSuhuHumi"></canvas>
+        </div>
+        <div class="chart-box">
+            <h4>Intensitas Cahaya (LDR)</h4>
+            <canvas id="chartLDR"></canvas>
+        </div>
     </div>
 
-    <h3>Riwayat Data</h3>
+    <h3>Riwayat 5 Data Terakhir</h3>
     <table>
         <thead>
             <tr><th>Waktu</th><th>Suhu</th><th>Humi</th><th>LDR</th><th>Kondisi</th></tr>
@@ -71,21 +84,32 @@
 <script>
     const scriptURL = "https://script.google.com/macros/s/AKfycbyz_PseDSihcoh3w8R885RRvorLvc5R0ikQBh1vS7kMLkL5oMXDoxiuCL7eIRkSMjMsaA/exec";
     let intervalID;
-    let myChart;
+    let chartSH, chartL;
 
-    function initChart() {
-        const ctx = document.getElementById('iotChart').getContext('2d');
-        myChart = new Chart(ctx, {
+    function initCharts() {
+        const ctxSH = document.getElementById('chartSuhuHumi').getContext('2d');
+        chartSH = new Chart(ctxSH, {
             type: 'line',
             data: {
                 labels: [],
                 datasets: [
-                    { label: 'Suhu (°C)', data: [], borderColor: '#1a73e8', tension: 0.4, fill: false },
-                    { label: 'Humi (%)', data: [], borderColor: '#00bcd4', tension: 0.4, fill: false },
-                    { label: 'LDR', data: [], borderColor: '#f4b400', tension: 0.4, fill: false }
+                    { label: 'Suhu (°C)', data: [], borderColor: '#1a73e8', backgroundColor: 'rgba(26, 115, 232, 0.1)', fill: true, tension: 0.4 },
+                    { label: 'Humi (%)', data: [], borderColor: '#00bcd4', backgroundColor: 'rgba(0, 188, 212, 0.1)', fill: true, tension: 0.4 }
                 ]
             },
-            options: { responsive: true, scales: { y: { beginAtZero: false } } }
+            options: { responsive: true }
+        });
+
+        const ctxL = document.getElementById('chartLDR').getContext('2d');
+        chartL = new Chart(ctxL, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    { label: 'LDR', data: [], borderColor: '#f4b400', backgroundColor: 'rgba(244, 180, 0, 0.1)', fill: true, tension: 0.4 }
+                ]
+            },
+            options: { responsive: true }
         });
     }
 
@@ -94,11 +118,10 @@
         .then(res => res.json())
         .then(data => {
             if (data.length <= 1) return;
+            
             let labels = [], dataSuhu = [], dataHumi = [], dataLDR = [];
-            let tbody = document.getElementById("tabelBody");
-            tbody.innerHTML = "";
+            let displayData = data.slice(-10); // Ambil 10 data terakhir untuk grafik
 
-            let displayData = data.slice(-10);
             displayData.forEach(row => {
                 if(row[0] === "Waktu") return;
                 labels.push(new Date(row[0]).toLocaleTimeString());
@@ -107,26 +130,43 @@
                 dataLDR.push(row[3]);
             });
 
-            myChart.data.labels = labels;
-            myChart.data.datasets[0].data = dataSuhu;
-            myChart.data.datasets[1].data = dataHumi;
-            myChart.data.datasets[2].data = dataLDR;
-            myChart.update();
+            // Update Grafik Suhu & Humi
+            chartSH.data.labels = labels;
+            chartSH.data.datasets[0].data = dataSuhu;
+            chartSH.data.datasets[1].data = dataHumi;
+            chartSH.update();
 
+            // Update Grafik LDR
+            chartL.data.labels = labels;
+            chartL.data.datasets[0].data = dataLDR;
+            chartL.update();
+
+            // Update Nilai Kartu & Status
             let last = data[data.length - 1];
             document.getElementById("txtSuhu").innerText = last[1] + " °C";
             document.getElementById("txtHumi").innerText = last[2] + " %";
             document.getElementById("txtLDR").innerText = last[3];
             
             let sBox = document.getElementById("statusBox");
-            sBox.innerText = "KONDISI: " + last[4];
+            let kondisi = last[4].toUpperCase();
+            sBox.innerText = "KONDISI: " + kondisi;
             sBox.className = last[4].toLowerCase();
 
-            data.reverse().slice(0, 5).forEach(row => {
+            // Update Tabel (5 Terakhir)
+            let tbody = document.getElementById("tabelBody");
+            tbody.innerHTML = "";
+            data.slice().reverse().slice(0, 5).forEach(row => {
                 if(row[0] === "Waktu") return;
-                tbody.innerHTML += `<tr><td>${new Date(row[0]).toLocaleTimeString()}</td><td>${row[1]}°C</td><td>${row[2]}%</td><td>${row[3]}</td><td>${row[4]}</td></tr>`;
+                tbody.innerHTML += `<tr>
+                    <td>${new Date(row[0]).toLocaleTimeString()}</td>
+                    <td>${row[1]}°C</td>
+                    <td>${row[2]}%</td>
+                    <td>${row[3]}</td>
+                    <td><b>${row[4]}</b></td>
+                </tr>`;
             });
-        });
+        })
+        .catch(err => console.log("Error Fetching:", err));
     }
 
     function mulaiMonitoring() {
@@ -145,9 +185,10 @@
         document.getElementById("btnStop").disabled = true;
         document.getElementById("selectInterval").disabled = false;
         document.getElementById("statusBox").innerText = "STATUS: STOPPED";
+        document.getElementById("statusBox").className = "standby";
     }
 
-    window.onload = initChart;
+    window.onload = initCharts;
 </script>
 </body>
 </html>
